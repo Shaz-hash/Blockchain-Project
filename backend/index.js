@@ -48,6 +48,18 @@ const logsFilter = {
 // const contractABI = [ /* YOUR CONTRACT ABI HERE */ ]; // Replace with your contract ABI
 // const contract = new web3.eth.Contract(contractABI, contractAddress);
 
+async function signMessage(message) {
+
+  const originalMessageHash = ethUtil.keccak256(Buffer.from(message));
+  const wallet = new ethers.Wallet(PRIVATEKEY);
+  const signature = await wallet.signMessage(originalMessageHash);
+  console.log("Signature created is : ", signature)
+  return signature;
+}
+
+
+
+
 // Middleware to authenticate JWT and extract claims
 function authenticateJWT(req, res, next) {
     const token = req.header('Authorization');
@@ -238,7 +250,6 @@ app.get("/files/:fileName", async (req, res) => {
     }
     return res.status(404).send({ message: 'Permisssion not given !' });
   }
-
   // After verifying, check if any relevant event for that block has been emmitted or not ?
 
   // If event released, then grant the access for download 
@@ -255,6 +266,103 @@ app.get("/files/:fileName", async (req, res) => {
     }
   });
 });
+
+ /* Following Function is to provide the client with the policy for the smart contract */
+
+app.get("/getPolicy/:fileName", async (req, res) => {
+
+  // 1) Extract artifacts json file 
+  // 2) Extract the smart contract's address 
+  // 3) Returns address, requirement Functions, permission function , abi 
+  /* Server will store a mapping between FileName Against The Smart Contract Adress */
+  /* Search the mongoDB to get the smart contract and return it's address */
+  try {
+    const fileName = req.params.fileName;
+    console.log("BACKEND_STEP1 : filenName requested = ", fileName);
+    const contractPath = path.join(__dirname, `../blockchain/artifacts/contracts/SC_20_21_13_28.sol/SC_20_21_13_28.json`);
+    console.log("filepath is : ", contractPath);
+    const myContract = require(contractPath);
+    console.log("hello" , myContract.abi)
+    // const policy = await Policy.findOne({ fileName });
+    // if (!policy) {
+    //   return res.status(404).send('Policy not found');
+    // }
+    res.json({
+      newContractAddress: "0x1c2Ab6b1943f00f40bfff1079709A9394839Cb05",
+      abi: myContract.abi,
+      argv: "doctorId,hospitalId,specialization,accessRights,location",
+      permissionFunction: "evaluate"
+  });
+} catch (error) {
+  res.status(500).send('Error fetching policy');
+}
+  
+  
+
+});
+
+
+  /* Following Function is responsible to provide you with the arguments required for the username and signed them*/
+
+app.get("/getSignedDetails/:username" , async (req , res) => {
+
+  try 
+  {
+    console.log("hereeeee1!!!")
+    const authHeader = req.headers['authorization'];
+    let token = authHeader && authHeader.split(' ')[1];
+    console.log("token " , token);
+    const argvString = req.headers['argv'];
+    console.log("Argv " ,argvString);
+    const args = argvString ? argvString.split(',') : [];
+    if(args.length == 0 || !token)
+    {
+
+      console.log("sad")
+      throw new Error("Arguments or Token not provided!");
+    }
+    console.log("hereeeee2!!!")
+    const username = req.params.username;
+    console.log("username", username);
+    const individual = await Individual.findOne({ username: username });
+    if (!individual) {
+      return res.status(404).send({ message: 'Individual not found' });
+    }
+    console.log("hereeeee3!!!")
+    // Extract the details dynamically based on args array
+    const details = {}; let signedString = "";
+    args.forEach( (arg , index) => {
+      if (individual[arg] !== undefined) {
+        if(arg == "doctorId" || arg == "hospitalId" || arg == "specialization" || arg == "location")
+        { console.log("args allowed : ", arg) 
+          signedString += individual[arg];
+          if (index < args.length - 1) {
+            signedString += ',';
+          }}
+        details[arg] = individual[arg]
+      }
+      else 
+      {
+        let errMsg = "Argument " + arg + " doesnt exist in schema !";
+        console.log(errMsg)
+        throw new Error(errMsg);
+      }
+    });
+    console.log("String is : ", signedString)
+    let signature = await signMessage(signedString);
+    console.log(signature);
+    res.json({
+      individualDetails : details,
+      signature : signature  
+    })
+    
+  }
+  catch (error)
+  {
+    res.status(404).send({ message: 'Server error', error: error.message }); 
+  }
+});
+
 
 app.get('/api/individuals/:username', async (req, res) => {
   try {
