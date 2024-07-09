@@ -1,4 +1,6 @@
 import xml.etree.ElementTree as ET
+import sys
+import os
 
 def read_xacml(file_path):
     """
@@ -30,7 +32,7 @@ def generate_evaluate_function(keys):
     condition_string = " && ".join(conditions)
     return condition_string
 
-def generate_contract(data):
+def generate_contract(data , fileName):
     """
     Generates a Solidity smart contract with dynamic dataset-specific policies based on the provided data.
     """
@@ -48,7 +50,7 @@ pragma solidity >=0.4.22 <0.9.0;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract SC_20_21_13_28 {{
+contract {fileName} {{
     using Strings for uint256;
 
     address public constant publicKey =
@@ -176,13 +178,34 @@ contract SC_20_21_13_28 {{
     """
     return base_contract
 
+# def main():
+#     file_path = "policy.xml"  # Modify this path to the location of your XACML file.
+#     data = read_xacml(file_path)
+#     contract = generate_contract(data)
+#     with open("AAAAAAAAAAAAAAAA.sol", "w") as f:
+#         f.write(contract)
+#     print("Contract generated successfully!")
+
+# if __name__ == "__main__":
+#     main()
+
 def main():
-    file_path = "policy.xml"  # Modify this path to the location of your XACML file.
+    if len(sys.argv) != 3:
+        print("Usage: python xacml-parser.py <file.xml> <output_dir>")
+        sys.exit(1)
+    
+    file_path = sys.argv[1]
+    output_dir = sys.argv[2]
     data = read_xacml(file_path)
-    contract = generate_contract(data)
-    with open("AAAAAAAAAAAAAAAA.sol", "w") as f:
+    base_name = os.path.basename(file_path)  # Get the file name with extension
+    sol_file_name = base_name.replace(".xml", ".sol")
+    contract = generate_contract(data , base_name.replace(".xml" ,""))
+    sol_file_path = os.path.join(output_dir, sol_file_name)  # Store in the output directory
+
+    with open(sol_file_path, "w") as f:
         f.write(contract)
-    print("Contract generated successfully!")
+    
+    print(f"Contract generated successfully! Output file: {sol_file_path}")
 
 if __name__ == "__main__":
     main()
