@@ -144,6 +144,8 @@ function FileList() {
       }
     }
 
+    
+
     fetchFiles();
     initializeWeb3();
      document.body.classList.add('file-list-page');
@@ -173,13 +175,95 @@ function FileList() {
     }
   };
 
+  
+  function getAuthToken () 
+  {
+    return localStorage.getItem('authToken');
+  } 
+
+
+  // The following function will ask the backend for the details required w.r.t to the file needed :
+  const getPolicyDetails = async ( fileName ) =>{
+
+    try {
+      const response = await axios.get(`http://localhost:3001/getPolicy/${fileName}`);
+      if (response.status !== 200) {
+        throw new Error('Policy not found');
+      }
+      const { newContractAddress , abi  , argv , permissionFunction } = response.data;
+      console.log("heres the response ")
+      console.log(response.data)
+      
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching policy:", error);
+      throw error;
+    }
+  };
+
+  // The following function expects series of requirements in string format e.g. name,id...etc 
+  // please expect the signature over the details in the end of the whole result
+  const getSignedDetails = async (argv) =>{
+    try {
+      let authToken = getAuthToken();
+      const signedCredentials = await axios.get(`http://localhost:3001/getSignedDetails/${inputValue}`, {
+          headers: {
+              'Authorization': `Bearer ${authToken}`,
+              'Argv' : argv
+          }
+      });
+      // Extract individual details into an array
+    const individualDetails = signedCredentials.data.individualDetails;
+    const detailsArray = Object.values(individualDetails);
+
+    // let newArray = [];
+    // Object.values(detailsArray).forEach(item => {
+    // newArray.push(item);});
+
+    console.log('Signed details array:', detailsArray);
+    console.log('Signature:', signedCredentials.data.signature);
+    detailsArray.push(signedCredentials.data.signature);
+    return detailsArray
+    }
+    catch (error)
+    {
+      console.error("Error in retrieving signed details : ", error)
+    }
+  }
+
+  const callSmartContractWOtxn = async ( contractAddress , contractABI , functionName , args) => {
+    /// Need to complete 
+
+  };
+
+  const callSmartContractWithtxn = async (contractAddress, contractABI, functionName, args) => {
+    try {
+        console.log(contractABI, contractAddress)
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        // Create a new instance of web3 with the provider
+        const web3 = new Web3(window.ethereum);
+        const contract = new web3.eth.Contract(contractABI , contractAddress);
+        const accounts = await web3.eth.getAccounts();
+        const fromAccount = accounts[0];
+        console.log(fromAccount)
+        const method = contract.methods[functionName](...args);
+        const gas = await method.estimateGas({ from: fromAccount });
+        // Send the transaction
+        const result = await method.send({ from: fromAccount, gas });
+        console.log(result)
+        return result;
+    } catch (error) {
+        console.error("Error calling contract function:", error);
+        throw error;
+    }
+};
+
+
   const checkPermissions = async (fileName) => {
     try {
       // passin the signature token to the server for the details :
-      setNotification1("Extracting your account details from Server using your Signed Token");
       const authToken = localStorage.getItem('authToken');
       if (!authToken) {
-          setNotification1("Authentication token not found. Please log in.");
           throw new Error('Authentication token not found. Please log in.');
       }
       const credentials = await axios.get(`http://localhost:3001/api/individuals/${inputValue}`, {
@@ -188,31 +272,45 @@ function FileList() {
           }
       });
 
-      setNotification1("Credentials retrieved successfully from Server");
+      // const credentials = await axios.get(`http://localhost:3001/api/individuals/${inputValue}`);
+      setNotification("Credentials retrieved successfully.");
       console.log("credentials", credentials);
       setmyCreds(credentials);
       console.log("My creds are : ", myCreds);
+      let {newContractAddress , abi  , argv , permissionFunction} = await getPolicyDetails(fileName);
+      console.log("frontend argv is : ", argv)
+      let myArr = await getSignedDetails(argv);
+      myArr.unshift(fileName) 
       const { doctorId, hospitalId, specialization, accessRights, location } = credentials.data;
+
       setNotification6(`Retrieved Details:\nDoctor ID: ${doctorId}\n, Hospital ID: ${hospitalId}\n, Specialization: ${specialization}\n, Access Rights: ${accessRights}\n, Location: ${location}`);
       
       setNotification2("Invoking Smart Contract with your request");
       // Interaction with the Smart Contract :
+
       if (typeof myContract === 'undefined' || !myContract.abi) {
         throw new Error('VerifySignature contract ABI is not defined');
       }
-      const contractABI = myContract.abi;
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(myContractAddress, contractABI, signer);
-
+      // const contractABI = myContract.abi;
+      // await window.ethereum.request({ method: 'eth_requestAccounts' });
+      // const provider = new ethers.BrowserProvider(window.ethereum);
+      // const signer = await provider.getSigner();
+      // const contract = new ethers.Contract(myContractAddress, contractABI, signer);
       console.log("Our token is : ", authToken)
       let mySignature = authToken;
       console.log(mySignature.length)
-      
+
+      // const tx = await contract.evaluate(fileName, doctorId, hospitalId, specialization, accessRights, location, mySignature);
+      // const receipt = await tx.wait();
+      // console.log("your transaction reciept is : ",receipt)
+      // console.log("Decoding the data : ", receipt.logs);
+      // console.log(web3.eth.abi.decodeParameter('string', receipt.logs[0].data));
+
       setNotification3("Waiting for your transaction to be published on Etherium");
-      const tx = await contract.evaluate(fileName, doctorId, hospitalId, specialization, accessRights, location, mySignature);
-      const receipt = await tx.wait();
+      // const tx = await contract.evaluate(fileName, doctorId, hospitalId, specialization, accessRights, location, mySignature);
+      // const receipt = await tx.wait();
+      console.log("my Array is : ", myArr)
+      const receipt = await callSmartContractWithtxn(myContractAddress , abi , permissionFunction , myArr);      
       console.log("your transaction reciept is : ",receipt)
       console.log("Decoding the data : ", receipt.logs);
 
@@ -222,13 +320,15 @@ function FileList() {
       const [decision, publicKey, datasetID] = txnResult.split(':');
       if (decision == "true")
       {
-        setNotification7("Access Granted for Dataset: " + datasetID);
+
+        console.log("Yes confirmed !");
+        setNotification7("Smart Contract's Access Policy's Result for you is Permit for " + datasetID);
       } 
       else 
       {
-        setNotification7("Access Denied for Dataset: " + datasetID + ". Permission was Denied.");
-      }
-      
+        setNotification7("Smart Contract's Access Policy's Result for you is Denied for " + datasetID);
+      }      
+
       return true;
     } catch (error) {
       console.error('Error checking permissions:', error);
