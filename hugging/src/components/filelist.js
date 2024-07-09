@@ -41,7 +41,7 @@ function FileList() {
 
   // These state variables are used to unveil the backend & smart Contract processing
 
-  const [notification5, setNotification5] = useState("Your Token provided is " + localStorage.getItem("authToken"));
+  const [notification5, setNotification5] = useState("Your Token is " + localStorage.getItem("authToken"));
   const [notification6, setNotification6] = useState("");
   const [notification7, setNotification7] = useState("");
   // const [notification8, setNotification8] = useState("");  
@@ -282,6 +282,12 @@ function FileList() {
       let myArr = await getSignedDetails(argv);
       myArr.unshift(fileName) 
       const { doctorId, hospitalId, specialization, accessRights, location } = credentials.data;
+
+      setNotification6(`Retrieved Details:\nDoctor ID: ${doctorId}\n, Hospital ID: ${hospitalId}\n, Specialization: ${specialization}\n, Access Rights: ${accessRights}\n, Location: ${location}`);
+      
+      setNotification2("Invoking Smart Contract with your request");
+      // Interaction with the Smart Contract :
+
       if (typeof myContract === 'undefined' || !myContract.abi) {
         throw new Error('VerifySignature contract ABI is not defined');
       }
@@ -314,6 +320,7 @@ function FileList() {
       const [decision, publicKey, datasetID] = txnResult.split(':');
       if (decision == "true")
       {
+
         console.log("Yes confirmed !");
         setNotification7("Smart Contract's Access Policy's Result for you is Permit for " + datasetID);
       } 
@@ -321,6 +328,7 @@ function FileList() {
       {
         setNotification7("Smart Contract's Access Policy's Result for you is Denied for " + datasetID);
       }      
+
       return true;
     } catch (error) {
       console.error('Error checking permissions:', error);
@@ -413,21 +421,26 @@ function FileList() {
       </div>
       <div class="file-list-container" id="fileListContainer">
       <form onSubmit={handleSubmit}>
+          <input style={{backgroundColor:"white"}} type="text" value={inputValue} onChange={handleInputChange} placeholder="Enter your username" />
+          <select style={{backgroundColor:"white", width:"calc(100% - 40px)", color: 'grey'}} value={inputValue1} onChange={handleInputChange1}>
+            <option value="" disabled>Select a dataset</option>
+            {files.map((file, index) => (
+              <option key={index} value={file}>{file}</option>
+            ))}
+          </select>
+          <button class="CheckPermissions" type="submit">Check Permissions & Download File</button>
+        </form>
 
-        <input type="text" value={inputValue} onChange={handleInputChange} placeholder="Enter your username" />
-        <input type="text" value={inputValue1} onChange={handleInputChange1} placeholder="Enter dataset ID" />
-        <button class="CheckPermissions" type="submit">Check Permissions & Download File</button>
-      </form>
+        {notification5 && <p class="notification-message" id="notificationMessage">{notification5}</p>}
+        {notification6 && <p class="notification-message" id="notificationMessage">{notification6}</p>}
+        {notification3 && <p class="notification-message" id="notificationMessage">{notification3}</p>}
         {notification && <p class="notification-message" id="notificationMessage">{notification}</p>}
         {notification1 && <p class="notification-message" id="notificationMessage">{notification1}</p>}
 
         {notification2 && <p class="notification-message" id="notificationMessage">{notification2}</p>}
         
         
-        {notification5 && <p class="notification-message" id="notificationMessage">{notification5}</p>}
-        {notification6 && <p class="notification-message" id="notificationMessage">{notification6}</p>}
          
-        {notification3 && <p class="notification-message" id="notificationMessage">{notification3}</p>}
         {notification7 && <p class="notification-message" id="notificationMessage">{notification7}</p>}
         
         {notification4 && <p class="notification-message" id="notificationMessage">{notification4}</p>}
@@ -438,11 +451,11 @@ function FileList() {
         
         {error && <p class="notification-message" id="notificationMessage">{error}</p>}
         <ul class="file-list" id="fileList">
-          {files.map((file, index) => (
+          {/* {files.map((file, index) => (
             <li key={index} class="file-item" id={`fileItem-${index}`} onClick={() => handleDownload(inputValue,file)}>
               {file}
             </li>
-          ))}
+          ))} */}
         </ul>
       </div>
     </>
