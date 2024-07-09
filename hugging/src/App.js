@@ -9,6 +9,8 @@ import FileList from './components/filelist';
 import { UsernameProvider } from './userdata/usernamecontext'; // Import UsernameProvider
 import SmartContract from './components/smartcontract';
 import PreSignup from './components/presignup';
+import WorkflowPage from './components/workflowpage'; // Import WorkflowPage
+import DataSetPage from './components/datasetpage'; // Import DataSetPage
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
             <Route path="/filelist" element={<FileList />} />
             <Route path="/smartcontract" element={<SmartContract />} />
             <Route path="/presignup" element={<PreSignup />} />
+            <Route path="/workflow" element={<WorkflowPage />} /> {/* Add WorkflowPage route */}
+            <Route path="/dataset" element={<DataSetPage />} /> {/* Add DataSetPage route */}
           </Routes>
         </div>
       </Router>
