@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Policy xmlns="urn:oasis:names:tc:xacml:3.0:core:schema:wd-17"
+        PolicyId="dataset-specific-access-policy-3"
+        RuleCombiningAlgId="urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:permit-overrides">
+    <Description>
+        Access control policy for dataset-specific attributes.
+    </Description>
+    <Target/>
+    <Rule RuleId="validate-dataset-policy-3"
+          Effect="Permit">
+        <Description>
+            Permit access if the dataset attributes match the predefined policies.
+        </Description>
+        <Target>
+            <AnyOf>
+                <AllOf>
+                    <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">HospitalA</AttributeValue>
+                        <AttributeDesignator AttributeId="hospitalId"
+                                             DataType="http://www.w3.org/2001/XMLSchema#string"/>
+                    </Match>
+                </AllOf>
+                <AllOf>
+                    <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+                        <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">Cardiology</AttributeValue>
+                        <AttributeDesignator AttributeId="specialization"
+                                             DataType="http://www.w3.org/2001/XMLSchema#string"/>
+                    </Match>
+                </AllOf>
+            </AnyOf>
+        </Target>
+    </Rule>
+    <Rule RuleId="default-deny"
+          Effect="Deny"/>
+</Policy>
