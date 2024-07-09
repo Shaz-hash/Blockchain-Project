@@ -42,6 +42,15 @@ const WorkflowPage = () => {
   []);
 
 
+  const updateFileUrl = (fileName, fileUrl) => {
+    setFileDetails(prevDetails =>
+      prevDetails.map(file =>
+        file.fileName === fileName
+          ? { ...file, details: { ...file.details, fileUrl } }
+          : file
+      )
+    );
+  };
 
 
   /*Backend related APIS functions : */
@@ -168,7 +177,8 @@ const WorkflowPage = () => {
       address: newContractAddress,
       permissionFunction: mypermissionFunction,
       arguments: argv,
-      contractAbi : abi
+      contractAbi : abi,
+      fileUrl: ''
     };
     setFileDetails(prevDetails => [...prevDetails, { fileName, details }]);
   };
@@ -208,6 +218,8 @@ const WorkflowPage = () => {
         const receipt = await callSmartContractWithtxn(newContractAddress , abi , permissionFunction , signedArgv);  
         
         let txnResult = web3.eth.abi.decodeParameter('string', receipt.logs[0].data);
+
+        updateFileUrl(fileName, `https://sepolia.etherscan.io/address/${newContractAddress}`);
         
         const [decision, publicKey, datasetID] = txnResult.split(':');
 
@@ -258,6 +270,9 @@ const WorkflowPage = () => {
           <p><strong>Contract Address:</strong> {file.details.address}</p>
           <p><strong>Permission Function:</strong> {file.details.permissionFunction}</p>
           <p><strong>Arguments:</strong> {file.details.arguments}</p>
+          {file.details.fileUrl && (
+              <p><strong>Transaction URL:</strong> {file.details.fileUrl}</p>
+            )}
         </div>
       ))}
       {notification && <p className="notification-message">{notification}</p>}
