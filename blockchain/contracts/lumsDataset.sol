@@ -5,7 +5,7 @@ pragma solidity >=0.4.22 <0.9.0;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract SC_20_21_13_28 {
+contract lumsDataset {
     using Strings for uint256;
 
     address public constant publicKey =
@@ -17,18 +17,17 @@ contract SC_20_21_13_28 {
     mapping(string => string) datasetPolicies;
 
     constructor() {{
-        datasetPolicies["hospitalId"] = "HospitalA";
-        datasetPolicies["doctorId"] = "doc123";
+        datasetPolicies["location"] = "LUMS";
         datasetPolicies["specialization"] = "Cardiology";
     }}
 
     function getPolicy() public pure returns (string memory) {{
-        return "hospitalId,doctorId,specialization";
+        return "location,specialization";
     }}
 
     function evaluate(
         string memory datasetID,
-        string memory hospitalId, string memory doctorId, string memory specialization,
+        string memory location, string memory specialization,
         bytes memory signature
     ) public {{
         // Verifying the Signature first:
@@ -37,7 +36,7 @@ contract SC_20_21_13_28 {
                 publicKey,
                 string(
                     abi.encodePacked(
-                        hospitalId, ", ", doctorId, ", ", specialization
+                        location, ", ", specialization
                     )
                 ),
                 signature
@@ -46,7 +45,7 @@ contract SC_20_21_13_28 {
         );
 
         // Policy Evaluation
-        bool permit = keccak256(abi.encodePacked(datasetPolicies["hospitalId"])) == keccak256(abi.encodePacked(hospitalId)) && keccak256(abi.encodePacked(datasetPolicies["doctorId"])) == keccak256(abi.encodePacked(doctorId)) && keccak256(abi.encodePacked(datasetPolicies["specialization"])) == keccak256(abi.encodePacked(specialization));
+        bool permit = keccak256(abi.encodePacked(datasetPolicies["location"])) == keccak256(abi.encodePacked(location)) && keccak256(abi.encodePacked(datasetPolicies["specialization"])) == keccak256(abi.encodePacked(specialization));
 
         string memory myAddress = convert();
         string memory decision = string(

@@ -18,8 +18,8 @@ const WorkflowPage = () => {
   const [error, setError] = useState(null);
 
   const workflows = [
-    "Workflow 1 : dataset1,dataset2,dataset3",
-    "Workflow 2 : dataset1,dataset2",
+    "Workflow 1 : lumsDataset,rutgersDataset,policy",
+    "Workflow 2 : lumsDataset,rutgersDataset",
     "Workflow 3 : policy"
   ];
 

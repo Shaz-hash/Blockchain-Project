@@ -7,6 +7,11 @@ const SmartContract = require('../models/SmartContract'); // Import the SmartCon
 const contractDir = path.join(__dirname, '../contracts');
 console.log("Policy Directory is : ",  contractDir);
 async function deployContract(fileName) {
+  if(fileName == "policy.sol")
+  {
+    console.log("returning");
+    return;
+  }
   const contractName = fileName.replace('.sol', '');
   const ContractFactory = await ethers.getContractFactory(contractName);
   const contract = await ContractFactory.deploy();

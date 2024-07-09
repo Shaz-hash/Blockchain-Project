@@ -149,6 +149,82 @@
       "artifacts": [
         "policy"
       ]
+    },
+    "/Users/shazer/Desktop/Blockchain-Project/blockchain/contracts/lumsDataset.sol": {
+      "lastModificationDate": 1720556358441,
+      "contentHash": "0591a52b146f8ed43cc5b7283897207c",
+      "sourceName": "contracts/lumsDataset.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/utils/Strings.sol"
+      ],
+      "versionPragmas": [
+        ">=0.4.22 <0.9.0"
+      ],
+      "artifacts": [
+        "lumsDataset"
+      ]
+    },
+    "/Users/shazer/Desktop/Blockchain-Project/blockchain/contracts/rutgersDataset.sol": {
+      "lastModificationDate": 1720556358502,
+      "contentHash": "1d4aafac394231bb16b53c110596c97b",
+      "sourceName": "contracts/rutgersDataset.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/utils/Strings.sol"
+      ],
+      "versionPragmas": [
+        ">=0.4.22 <0.9.0"
+      ],
+      "artifacts": [
+        "rutgersDataset"
+      ]
     }
   }
 }
