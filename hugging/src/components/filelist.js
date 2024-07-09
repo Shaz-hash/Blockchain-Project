@@ -246,6 +246,7 @@ function FileList() {
         const accounts = await web3.eth.getAccounts();
         const fromAccount = accounts[0];
         console.log(fromAccount)
+        console.log("function name is : ", functionName , "args are : ", args);
         const method = contract.methods[functionName](...args);
         const gas = await method.estimateGas({ from: fromAccount });
         // Send the transaction
@@ -265,7 +266,7 @@ function FileList() {
       const authToken = localStorage.getItem('authToken');
       if (!authToken) {
           throw new Error('Authentication token not found. Please log in.');
-      }
+        }
       const credentials = await axios.get(`http://localhost:3001/api/individuals/${inputValue}`, {
           headers: {
               'Authorization': `Bearer ${authToken}`
@@ -310,7 +311,7 @@ function FileList() {
       // const tx = await contract.evaluate(fileName, doctorId, hospitalId, specialization, accessRights, location, mySignature);
       // const receipt = await tx.wait();
       console.log("my Array is : ", myArr)
-      const receipt = await callSmartContractWithtxn(myContractAddress , abi , permissionFunction , myArr);      
+      const receipt = await callSmartContractWithtxn(newContractAddress , abi , permissionFunction , myArr);      
       console.log("your transaction reciept is : ",receipt)
       console.log("Decoding the data : ", receipt.logs);
 
@@ -373,7 +374,7 @@ function FileList() {
           headers: {
             'Authorization': `Bearer ${authToken}`,
             'PublicKey': publicKeyAddress,
-            'docID': docID,
+            'docID': inputValue,
             'datasetID':fileName
           },
           responseType: 'blob'
@@ -422,13 +423,16 @@ function FileList() {
       <div class="file-list-container" id="fileListContainer">
       <form onSubmit={handleSubmit}>
           <input style={{backgroundColor:"white"}} type="text" value={inputValue} onChange={handleInputChange} placeholder="Enter your username" />
-          <select style={{backgroundColor:"white", width:"calc(100% - 40px)", color: 'grey'}} value={inputValue1} onChange={handleInputChange1}>
+          <input type="text" value={inputValue1} onChange={handleInputChange1} placeholder="Enter dataset ID" />
+          <button type="submit">Check Permissions</button>
+          
+          {/* <select style={{backgroundColor:"white", width:"calc(100% - 40px)", color: 'grey'}} value={inputValue1} onChange={handleInputChange1}>
             <option value="" disabled>Select a dataset</option>
             {files.map((file, index) => (
               <option key={index} value={file}>{file}</option>
             ))}
           </select>
-          <button class="CheckPermissions" type="submit">Check Permissions & Download File</button>
+          <button class="CheckPermissions" type="submit">Check Permissions & Download File</button> */}
         </form>
 
         {notification5 && <p class="notification-message" id="notificationMessage">{notification5}</p>}

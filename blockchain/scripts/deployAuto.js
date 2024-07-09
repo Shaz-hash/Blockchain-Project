@@ -13,7 +13,7 @@ async function deployContract(fileName) {
   await contract.deployed();
   console.log(`Contract ${fileName} deployed to:`, contract.address);
 
-  // Save contract information to MongoDB
+  
   const smartContract = new SmartContract({
     name: contractName,
     address: contract.address,
@@ -37,7 +37,6 @@ async function main() {
       process.exit(1);
     });
 
-  // Read all .sol files in the policy directory
   fs.readdir(contractDir, async (err, files) => {
     if (err) {
       console.error('Error reading policy directory:', err);

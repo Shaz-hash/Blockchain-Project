@@ -10,6 +10,7 @@ const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const {Web3} = require('web3');
 const Individual = require("./models/individual");
+const SmartContract = require("./models/SmartContract");
 
 // Imports for the signature creation :
 const ethUtil = require('ethereumjs-util');
@@ -31,16 +32,17 @@ const accessMap = new Map();
 
 const jwtSecretKey = 'secret_key'; // Use a secure key and keep it safe
 const PRIVATEKEY = '29a51884dea81b2eb575cd46bd51bd703cfb4c45e44ff0ee00f113b7b4339088';
+const PRIVATEKEY0x = '29a51884dea81b2eb575cd46bd51bd703cfb4c45e44ff0ee00f113b7b4339088';
 const CONTRACTADDRESS = '0x1c2Ab6b1943f00f40bfff1079709A9394839Cb05';
 const NODE_URL =
   "wss://sepolia.infura.io/ws/v3/f95f2b17b00a4d24b20398a713322329";
 const myWeb3 = new Web3(new Web3.providers.WebsocketProvider(NODE_URL));
-const logsFilter = {
-  address: "0x1c2Ab6b1943f00f40bfff1079709A9394839Cb05", // Contract address
-  topics: [
-    encodeEvent("SignUpResult(string)"),
-  ],
-};
+// const logsFilter = {
+//   address: "0xb6580cb164777BA069073229B804166e0A04Fa6D", // Contract address
+//   topics: [
+//     encodeEvent("SignUpResult(string)"),
+//   ],
+// };
 // Web3 setup - Update these values with your Ethereum node URL, contract address, and ABI and then uncomment the code below
 
 // const web3 = new Web3('http://localhost:8545'); // Change to your Ethereum node URL
@@ -57,9 +59,6 @@ async function signMessage(message) {
   return signature;
 }
 
-
-
-
 // Middleware to authenticate JWT and extract claims
 function authenticateJWT(req, res, next) {
     const token = req.header('Authorization');
@@ -75,7 +74,6 @@ function authenticateJWT(req, res, next) {
         res.status(400).send('Invalid token.');
     }
 }
-
 
 // Function to verify the signatures passed by the users => will return true/false
 async function verifySignature (message , givenSignature) {
@@ -101,11 +99,19 @@ async function verifySignature (message , givenSignature) {
 // ******   Functions to listen to the target smart contract for the access rights & accordinly provide access/deny
 
 
+const createLogsFilter = (address) => ({
+  address, // Contract address
+  topics: [
+    encodeEvent("SignUpResult(string)"),
+  ],
+});
+
 // Function to encode the event topic
 function encodeEvent(event) {
   return Web3.utils.sha3(event);
 }
-const subscribeToLogs = async () => {
+
+const subscribeToLogs = async (logsFilter) => {
   try {
     const subscription = await myWeb3.eth.subscribe('logs', logsFilter);
 
@@ -124,6 +130,45 @@ const subscribeToLogs = async () => {
   }
 };
 
+const startEventListeners = async () => {
+  try {
+    const smartContracts = await SmartContract.find();
+    if (!smartContracts.length) {
+      console.log("No smart contracts found in the database.");
+      return;
+    }
+
+    smartContracts.forEach(contract => {
+      const logsFilter = createLogsFilter(contract.address);
+      subscribeToLogs(logsFilter);
+      console.log(`Listening to events for contract: ${contract.address}`);
+    });
+  } catch (error) {
+    console.error("Error fetching smart contracts from DB:", error);
+  }
+};
+
+
+
+// const subscribeToLogs = async () => {
+//   try {
+//     const subscription = await myWeb3.eth.subscribe('logs', logsFilter);
+
+//     subscription.on('data', handleLogs);
+//     subscription.on('error', handleError);
+
+//     // Clean up subscription on component unmount
+//     return () => {
+//       subscription.unsubscribe((error, success) => {
+//         if (success) console.log('Successfully unsubscribed!');
+//         else console.error('Error unsubscribing:', error);
+//       });
+//     };
+//   } catch (error) {
+//     console.error(`Error subscribing to new logs: ${error}`);
+//   }
+// };
+
 // Fallback functions to react to the different events
 const handleLogs = (log) => {
   
@@ -137,11 +182,12 @@ const handleLogs = (log) => {
   // Only add to the map if the decision is true
   if (decision === 'true') {
     // const key = `${publicKey}:${datasetID}`;
-    const key = publicKey.trim();
+    let key = publicKey.trim().toLowerCase();
+    let fileName = datasetID.trim().toLowerCase();
     // const key = publicKey;
     console.log("The key is : ", key)
     const blockNumber = log.blockNumber;
-    
+    key = `${key}:${fileName}`;
     // Store the block number in the map
     accessMap.set(key, blockNumber);
   }
@@ -153,8 +199,8 @@ const handleError = (error) => {
 };
 
 // Call the subscription function
-subscribeToLogs();
-
+// subscribeToLogs();
+// startEventListeners();
 
 mongoose
   .connect(
@@ -178,6 +224,8 @@ const storage = multer.diskStorage({
     return cb(null, `${Date.now()}_${file.originalname}`);
   }
 });
+
+startEventListeners();
 
 const upload = multer({ storage });
 
@@ -205,7 +253,7 @@ app.get("/files/:fileName", async (req, res) => {
 
   // Verify the Signature to ensure that it's the exactly the same person who wants the access
 
-  const fileName = req.params.fileName;
+  let fileName = req.params.fileName;
   // Extract headers
   let authToken = req.headers['authorization'];
   const publicKey = req.headers['publickey'];
@@ -235,6 +283,8 @@ app.get("/files/:fileName", async (req, res) => {
   // check if there is mapping available if yes then persue and delete it else throw errror :
   // let myKey = publicKey+":"+fileName;
   let myKey = publicKey.trim().toLowerCase();
+  fileName = fileName.trim().toLowerCase();
+  myKey = `${myKey}:${fileName}`;
   if (accessMap.has(myKey)) {
     const value = accessMap.get(myKey);
     console.log(`Found key: ${myKey}, value: ${value}`);
@@ -252,11 +302,9 @@ app.get("/files/:fileName", async (req, res) => {
   }
   // After verifying, check if any relevant event for that block has been emmitted or not ?
 
-  // If event released, then grant the access for download 
-
-
-  
+  // If event released, then grant the access for download   
   // const fileName = req.params.fileName;
+  fileName = fileName + ".pdf";
   const filePath = path.join(__dirname, 'uploads', fileName);
   console.log("filePath", filePath);
   res.download(filePath, fileName, (err) => {
@@ -278,27 +326,39 @@ app.get("/getPolicy/:fileName", async (req, res) => {
   /* Search the mongoDB to get the smart contract and return it's address */
   try {
     const fileName = req.params.fileName;
-    console.log("BACKEND_STEP1 : filenName requested = ", fileName);
-    const contractPath = path.join(__dirname, `../blockchain/artifacts/contracts/SC_20_21_13_28.sol/SC_20_21_13_28.json`);
+    // First Verify see if the value is in DB :
+    const smartContract = await SmartContract.findOne({ name : fileName });
+    if (!smartContract) {
+      return res.status(404).send({ message: 'SmartContract with this policy not found' });
+    }
+    const contractPath = path.join(__dirname, `../blockchain/artifacts/contracts/${fileName}.sol/${fileName}.json`);
     console.log("filepath is : ", contractPath);
     const myContract = require(contractPath);
     console.log("hello" , myContract.abi)
+    // Get the contract instance
+    const contract = new myWeb3.eth.Contract(myContract.abi, smartContract.address);
+
+    // Example: Call a pure function 'getPolicy' from the smart contract
+    const result = await contract.methods.getPolicy().call();
+
+    console.log("requirements for the contract : ", fileName , " is  : ", result)
+    console.log("BACKEND_STEP1 : filenName requested = ", fileName);
+    
+    
     // const policy = await Policy.findOne({ fileName });
     // if (!policy) {
     //   return res.status(404).send('Policy not found');
     // }
     res.json({
-      newContractAddress: "0x1c2Ab6b1943f00f40bfff1079709A9394839Cb05",
+      newContractAddress: smartContract.address,
       abi: myContract.abi,
-      argv: "doctorId,hospitalId,specialization,accessRights,location",
+      argv: result,
       permissionFunction: "evaluate"
   });
 } catch (error) {
+  console.log("Error !" , error)
   res.status(500).send('Error fetching policy');
 }
-  
-  
-
 });
 
 
@@ -308,20 +368,15 @@ app.get("/getSignedDetails/:username" , async (req , res) => {
 
   try 
   {
-    console.log("hereeeee1!!!")
     const authHeader = req.headers['authorization'];
     let token = authHeader && authHeader.split(' ')[1];
-    console.log("token " , token);
     const argvString = req.headers['argv'];
     console.log("Argv " ,argvString);
     const args = argvString ? argvString.split(',') : [];
     if(args.length == 0 || !token)
     {
-
-      console.log("sad")
       throw new Error("Arguments or Token not provided!");
     }
-    console.log("hereeeee2!!!")
     const username = req.params.username;
     console.log("username", username);
     const individual = await Individual.findOne({ username: username });
@@ -333,12 +388,11 @@ app.get("/getSignedDetails/:username" , async (req , res) => {
     const details = {}; let signedString = "";
     args.forEach( (arg , index) => {
       if (individual[arg] !== undefined) {
-        if(arg == "doctorId" || arg == "hospitalId" || arg == "specialization" || arg == "location")
-        { console.log("args allowed : ", arg) 
+         console.log("args allowed : ", arg) 
           signedString += individual[arg];
           if (index < args.length - 1) {
-            signedString += ',';
-          }}
+            signedString += ', ';
+          }
         details[arg] = individual[arg]
       }
       else 
