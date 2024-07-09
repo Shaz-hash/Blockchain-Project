@@ -10,37 +10,47 @@ const DataSetPage = () => {
   const [notification, setNotification] = useState("");
 
   useEffect(() => {
-    async function fetchFiles() {
-      try {
-        const response = await axios.get('http://localhost:3001/files');
-        setFiles(response.data.files);
-        setNotification("Files fetched successfully.");
-      } catch (error) {
-        setError('Error fetching files');
-      }
-    }
-
-    fetchFiles();
+    // Simulate fetching files from backend
+    const simulatedFiles = ["lumsDataset", "rutgersDataset", "policy"];
+    setFiles(simulatedFiles);
+    setNotification("Files fetched successfully.");
     document.body.classList.add('dataset-page');
     return () => {
       document.body.classList.remove('dataset-page');
     };
   }, []);
 
-  const handleFileSelect = (event) => {
+  const handleFileSelect = async (event) => {
     const fileName = event.target.value;
     setSelectedFile(fileName);
-    fileDetailsHandler(fileName);
+    await fileDetailsHandler(fileName);
   };
 
-  const fileDetailsHandler = (fileName) => {
-    // Hardcoded values for demonstration
-    const details = {
-      address: "4r42f3rgtg543432de2f3rr",
-      permissionFunction: "Cardiology()",
-      arguments: ["doctorName", "DoctorID", "Specialization"]
-    };
-    setFileDetails(details);
+  const getPolicyDetails = async (fileName) => {
+    try {
+      const response = await axios.get(`http://localhost:3001/getPolicy/${fileName}`);
+      if (response.status !== 200) {
+        throw new Error('Policy not found');
+      }
+      const { newContractAddress, abi, argv, permissionFunction } = response.data;
+      console.log("here's the response ");
+      console.log(response.data);
+
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching policy:", error);
+      throw error;
+    }
+  };
+
+  const fileDetailsHandler = async (fileName) => {
+    try {
+      const policyDetails = await getPolicyDetails(fileName);
+      setFileDetails(policyDetails);
+    } catch (error) {
+      console.error("Error fetching file details:", error);
+      setError("Error fetching file details");
+    }
   };
 
   return (
@@ -61,9 +71,9 @@ const DataSetPage = () => {
       {fileDetails && (
         <div className="file-details">
           <h3>File Details</h3>
-          <p><strong>Contract Address:</strong> {fileDetails.address}</p>
+          <p><strong>Smart Contract Address:</strong> {fileDetails.newContractAddress}</p>
           <p><strong>Permission Function:</strong> {fileDetails.permissionFunction}</p>
-          <p><strong>Arguments:</strong> {fileDetails.arguments.join(", ")}</p>
+          <p><strong>Arguments Needed for the permission function:</strong> {Array.isArray(fileDetails.argv) ? fileDetails.argv.join(", ") : "N/A"}</p>
         </div>
       )}
       {notification && <p className="notification-message">{notification}</p>}
