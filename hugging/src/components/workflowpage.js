@@ -47,6 +47,26 @@ const WorkflowPage = () => {
     );
   };
 
+  const updateFileTxnHash = (fileName, txnHash) => {
+    setFileDetails(prevDetails =>
+      prevDetails.map(file =>
+        file.fileName === fileName
+          ? { ...file, details: { ...file.details, txnHash } }
+          : file
+      )
+    );
+  };
+
+  const updateFileTxnResult = (fileName, txnRawResult) => {
+    setFileDetails(prevDetails =>
+      prevDetails.map(file =>
+        file.fileName === fileName
+          ? { ...file, details: { ...file.details, txnRawResult } }
+          : file
+      )
+    );
+  };
+
   /* Backend related APIS functions */
 
   const getUserSecretDetails = async () => {
@@ -161,7 +181,10 @@ const WorkflowPage = () => {
       arguments: argv,
       contractAbi: abi,
       signedDetails: '',
-      fileUrl: ''
+      fileUrl: '',
+      txnHash : '',
+      blockHash : '',
+      txnRawResult : ''
     };
     setFileDetails(prevDetails => [...prevDetails, { fileName, details }]);
   };
@@ -180,6 +203,10 @@ const WorkflowPage = () => {
     // Mocking contract call result
     return { success: true, decision: true };
   };
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
   const buttonHandler = async (datasetArray) => {
     try {
@@ -200,20 +227,29 @@ const WorkflowPage = () => {
 
         fileDetailsHandler(fileName, newContractAddress, abi, argv, permissionFunction);
 
+        await sleep(4000);
+
         let signedArgv = await getSignedDetails(argv);
+        updateSignedDetails(fileName, signedArgv);
 
         signedArgv.unshift(fileName);
 
         const receipt = await callSmartContractWithtxn(newContractAddress, abi, permissionFunction, signedArgv);
+        console.log("reciept for txn : ");
+        console.log(receipt);
+
+
 
         let txnResult = web3.eth.abi.decodeParameter('string', receipt.logs[0].data);
 
         updateFileUrl(fileName, `https://sepolia.etherscan.io/address/${newContractAddress}`);
-        updateSignedDetails(fileName, signedArgv);
+        updateFileTxnHash(fileName, receipt.transactionHash);
+        updateFileTxnResult(fileName , txnResult);
+        // updateSignedDetails(fileName, signedArgv);
 
         const [decision, publicKey, datasetID] = txnResult.split(':');
 
-        if (decision) {
+        if (decision == "true") {
           setNotification(`Smart Contract's Access Policy's Result for ${fileName} is Permit`);
         } else {
           setNotification(`Smart Contract's Access Policy's Result for ${fileName} is Denied`);
@@ -224,7 +260,7 @@ const WorkflowPage = () => {
 
       setNotification("Workflow satisfied");
     } catch (error) {
-      setNotification("Workflow satisfied");
+      setNotification("Workflow Not Satisfied ! ");
       console.error(error);
     }
   };
@@ -257,9 +293,15 @@ const WorkflowPage = () => {
           <p><strong>Contract Address:</strong> {file.details.address}</p>
           <p><strong>Permission Function:</strong> {file.details.permissionFunction}</p>
           <p><strong>Arguments:</strong> {file.details.arguments}</p>
-          <p><strong>Signed Details:</strong> {JSON.stringify(file.details.signedDetails)}</p> {/* Display signed details */}
+          <p><strong>Signed Details from 3rd Party :</strong> {JSON.stringify(file.details.signedDetails)}</p> {/* Display signed details */}
           {file.details.fileUrl && (
             <p><strong>Transaction URL:</strong> {file.details.fileUrl}</p>
+          )}
+          {file.details.txnHash && (
+            <p><strong>Transaction Hash :</strong> {file.details.txnHash}</p>
+          )}
+          {file.details.txnRawResult && (
+            <p><strong>Transaction Event Result :</strong> {file.details.txnRawResult}</p>
           )}
         </div>
       ))}
