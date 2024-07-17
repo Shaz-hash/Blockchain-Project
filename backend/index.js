@@ -197,9 +197,20 @@ startEventListeners();
 
 const upload = multer({ storage });
 
-app.post('/upload', upload.single('file'), (req, res) => {
+// app.post('/upload', upload.single('file'), (req, res) => {
+//   console.log("req.body", req.body);
+//   console.log("req.file", req.file);
+// });
+
+app.post('/upload', upload.fields([{ name: 'file' }, { name: 'xacmlFile' }, { name: 'jsonTermsFile' }]), (req, res) => {
   console.log("req.body", req.body);
-  console.log("req.file", req.file);
+  console.log("req.files", req.files);
+  
+  if (!req.files.file || !req.files.xacmlFile || !req.files.jsonTermsFile) {
+    return res.status(400).json({ error: "All files (data, XACML, and JSON of terms) must be selected to upload." });
+  }
+
+  res.status(200).json({ message: "Files uploaded successfully!" });
 });
 
 app.get("/files", (req, res) => {

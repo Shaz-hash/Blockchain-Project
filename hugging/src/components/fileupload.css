@@ -38,6 +38,14 @@ body.fileupload-page {
   align-items: center;
 }
 
+/* Label styles */
+.file-label {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 5px;
+  color: #3572EF; /* Medium blue for labels */
+}
+
 /* Input field styles */
 .file-input {
   padding: 10px;
