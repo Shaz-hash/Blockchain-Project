@@ -73,7 +73,7 @@ const DataSetPage = () => {
           <h3>File Details</h3>
           <p><strong>Smart Contract Address:</strong> {fileDetails.newContractAddress}</p>
           <p><strong>Permission Function:</strong> {fileDetails.permissionFunction}</p>
-          <p><strong>Arguments Needed for the permission function:</strong> {Array.isArray(fileDetails.argv) ? fileDetails.argv.join(", ") : "N/A"}</p>
+          <p><strong>Arguments Needed for the permission function:</strong> {fileDetails.argv}</p>
         </div>
       )}
       {notification && <p className="notification-message">{notification}</p>}

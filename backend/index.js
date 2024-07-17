@@ -37,18 +37,6 @@ const CONTRACTADDRESS = '0x1c2Ab6b1943f00f40bfff1079709A9394839Cb05';
 const NODE_URL =
   "wss://sepolia.infura.io/ws/v3/f95f2b17b00a4d24b20398a713322329";
 const myWeb3 = new Web3(new Web3.providers.WebsocketProvider(NODE_URL));
-// const logsFilter = {
-//   address: "0xb6580cb164777BA069073229B804166e0A04Fa6D", // Contract address
-//   topics: [
-//     encodeEvent("SignUpResult(string)"),
-//   ],
-// };
-// Web3 setup - Update these values with your Ethereum node URL, contract address, and ABI and then uncomment the code below
-
-// const web3 = new Web3('http://localhost:8545'); // Change to your Ethereum node URL
-// const contractAddress = 'YOUR_CONTRACT_ADDRESS'; // Replace with your contract address
-// const contractABI = [ /* YOUR CONTRACT ABI HERE */ ]; // Replace with your contract ABI
-// const contract = new web3.eth.Contract(contractABI, contractAddress);
 
 async function signMessage(message) {
 
@@ -148,26 +136,6 @@ const startEventListeners = async () => {
   }
 };
 
-
-
-// const subscribeToLogs = async () => {
-//   try {
-//     const subscription = await myWeb3.eth.subscribe('logs', logsFilter);
-
-//     subscription.on('data', handleLogs);
-//     subscription.on('error', handleError);
-
-//     // Clean up subscription on component unmount
-//     return () => {
-//       subscription.unsubscribe((error, success) => {
-//         if (success) console.log('Successfully unsubscribed!');
-//         else console.error('Error unsubscribing:', error);
-//       });
-//     };
-//   } catch (error) {
-//     console.error(`Error subscribing to new logs: ${error}`);
-//   }
-// };
 
 // Fallback functions to react to the different events
 const handleLogs = (log) => {
@@ -332,6 +300,15 @@ app.get("/getPolicy/:fileName", async (req, res) => {
       return res.status(404).send({ message: 'SmartContract with this policy not found' });
     }
     const contractPath = path.join(__dirname, `../blockchain/artifacts/contracts/${fileName}.sol/${fileName}.json`);
+
+    /* Fetching The Json Term Policy : */
+    const jsonTermsPath = path.join(__dirname, `/uploads/${fileName}Terms.json`);
+    const fileTerms = require(jsonTermsPath);
+
+
+
+
+
     console.log("filepath is : ", contractPath);
     const myContract = require(contractPath);
     console.log("hello" , myContract.abi)
@@ -353,7 +330,8 @@ app.get("/getPolicy/:fileName", async (req, res) => {
       newContractAddress: smartContract.address,
       abi: myContract.abi,
       argv: result,
-      permissionFunction: "evaluate"
+      permissionFunction: "evaluate",
+      terms : fileTerms 
   });
 } catch (error) {
   console.log("Error !" , error)
@@ -383,7 +361,6 @@ app.get("/getSignedDetails/:username" , async (req , res) => {
     if (!individual) {
       return res.status(404).send({ message: 'Individual not found' });
     }
-    console.log("hereeeee3!!!")
     // Extract the details dynamically based on args array
     const details = {}; let signedString = "";
     args.forEach( (arg , index) => {
