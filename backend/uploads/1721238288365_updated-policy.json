@@ -1,0 +1,30 @@
+{
+    "personRole": ["oncologist", "researcher", "phd-student", "clinical-researcher", "medical-scientist"],
+    "specialization": ["lung-cancer", "cancer", "medical-research", "bioinformatics", "biomedical-engineering"],
+    "designation": ["doctor", "researcher", "phd-student", "clinician", "postdoctoral-fellow"],
+    "fromNetworks": [
+        "hospital-network",
+        "university-network",
+        "research-institute-network"
+    ],
+    "grantId": "grant123",
+    "department": ["oncology", "biology", "computer-science", "bioinformatics", "biomedical-engineering"],
+    "experienceYears": 3,
+    "certifications": [
+        "PhD",
+        "board-certified",
+        "fellowship-trained",
+        "certified-clinical-researcher"
+    ],
+    "researchFocus": ["oncology", "biology", "computer-science", "bioinformatics", "biomedical-engineering"],
+    "authorizedBy": [
+        "faculty-advisor",
+        "administrator",
+        "department-head",
+        "hospital-administrator",
+        "project-director",
+        "research-institute-director"
+    ],
+    "term1": "only for doctors",
+    "term2": "only for researchers"
+}
