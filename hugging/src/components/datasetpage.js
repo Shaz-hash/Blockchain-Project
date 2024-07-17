@@ -32,8 +32,9 @@ const DataSetPage = () => {
       if (response.status !== 200) {
         throw new Error('Policy not found');
       }
-      const { newContractAddress, abi, argv, permissionFunction } = response.data;
+      const { newContractAddress, abi, argv, permissionFunction , terms } = response.data;
       console.log("here's the response ");
+      console.log("Heres the terms : ", terms);
       console.log(response.data);
 
       return response.data;
